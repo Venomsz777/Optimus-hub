@@ -1,5 +1,5 @@
 -- 🔁 AUTO-UPDATE SYSTEM + VERSION CHECK
-local configUrl = "https://pastebin.com/raw/SeP0y6Vz" -- înlocuiește cu linkul tău JSON
+local configUrl = "https://raw.githubusercontent.com/Venomsz777/Optimus-hub/refs/heads/main/Optimus" -- înlocuiește cu linkul tău JSON
 
 local function getData(url)
     local success, response = pcall(function()
