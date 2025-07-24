@@ -1,5 +1,5 @@
 {
   "version": "1.0",
-  "forcePopup": false,
-  "script": "https://pastebin.com/raw/ABCDEFGH"
+  "forcePopup": true,
+  "script": "loadstring(game:HttpGet("https://raw.githubusercontent.com/Venomsz777/Optimus-hub/refs/heads/main/Optimus.lua"))()"
 }
