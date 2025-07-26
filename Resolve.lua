@@ -1,48 +1,79 @@
+-- Dezactivează read-only pe metatable
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+
+-- Salvăm metode originale
+local oldNamecall = mt.__namecall
+local oldIndex = mt.__index
+local oldNewIndex = mt.__newindex
+
 local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
-local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
 
--- Anti-Kick de tip "Profile Load Fail"
-task.spawn(function()
-	while task.wait(1) do
-		if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-			local pos = LP.Character.HumanoidRootPart.Position
-			if math.abs(pos.X) > 10000 or math.abs(pos.Y) > 10000 or math.abs(pos.Z) > 10000 then
-				LP.Character.HumanoidRootPart.CFrame = CFrame.new(0, 10, 0)
-				warn("[Anti-Kick] Pozitie resetata")
-			end
-		end
-	end
+-- Hook robust pe __namecall
+mt.__namecall = newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+
+    -- 1. Blocăm Kick
+    if method == "Kick" and self == LocalPlayer then
+        -- Pur și simplu ignorăm
+        return nil
+    end
+
+    -- 2. Blocăm Destroy pe LocalPlayer sau Character
+    if method == "Destroy" then
+        if self == LocalPlayer or (LocalPlayer.Character and self == LocalPlayer.Character) then
+            return nil
+        end
+    end
+
+    -- 3. Blocăm alte metode suspecte pe LocalPlayer
+    if (method == "Remove" or method == "RemoveAsync") and self == LocalPlayer then
+        return nil
+    end
+
+    -- 4. Poți adăuga alte metode suspecte aici dacă vrei
+
+    return oldNamecall(self, ...)
 end)
 
--- Anti-Moarte (prevenire de la 0 HP)
-task.spawn(function()
-	local function protectHumanoid(h)
-		h:GetPropertyChangedSignal("Health"):Connect(function()
-			if h.Health <= 0 then
-				h.Health = 100
-				warn("[Anti-Kick] Prevented death")
-			end
-		end)
-	end
-
-	if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-		protectHumanoid(LP.Character.Humanoid)
-	end
-
-	LP.CharacterAdded:Connect(function(char)
-		local h = char:WaitForChild("Humanoid", 3)
-		if h then protectHumanoid(h) end
-	end)
+-- Hook __index să nu dea erori sau să permită acces la UI
+mt.__index = newcclosure(function(self, key)
+    -- Dacă cineva încearcă să acceseze ceva suspect, putem filtra aici (optional)
+    return oldIndex(self, key)
 end)
 
--- Notificare
-pcall(function()
-	StarterGui:SetCore("SendNotification", {
-		Title = "Anti Kick ON ✅",
-		Text = "Protectie activata (simpla)",
-		Duration = 5
-	})
+mt.__newindex = newcclosure(function(self, key, value)
+    -- Optional: poți bloca anumite modificări sau să te asiguri că UI-ul nu e afectat
+    oldNewIndex(self, key, value)
+end)
+
+-- Re-activăm read-only pe metatable
+setreadonly(mt, true)
+
+
+-- Blocare event Kick direct (în caz că folosește RemoteEvent)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+for _, obj in pairs(ReplicatedStorage:GetDescendants()) do
+    if obj:IsA("RemoteEvent") and obj.Name:lower():find("kick") then
+        obj.OnClientEvent:Connect(function(...)
+            -- ignoră
+        end)
+    end
+end
+
+-- Bonus: blocare ResetCharacter
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local hum = char:WaitForChild("Humanoid", 5)
+    if hum then
+        hum.Died:Connect(function()
+            -- Re-spawn automat sau alte metode
+            wait(1)
+            LocalPlayer:LoadCharacter()
+        end)
+    end
 end)local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -247,7 +278,7 @@ FlyBtn.MouseButton1Click:Connect(function()
 		local dist = (basePosition - RootPart.Position).Magnitude
 		if dist > 5 then
 			local dir = (basePosition - RootPart.Position).Unit
-			bv.Velocity = dir * 60
+			bv.Velocity = dir * 80
 		else
 			bv:Destroy()
 			conn:Disconnect()
@@ -350,7 +381,7 @@ end)
 RunService.RenderStepped:Connect(function()
 	if speedActive and Humanoid.MoveDirection.Magnitude > 0 then
 		local velY = RootPart.Velocity.Y
-		RootPart.Velocity = Humanoid.MoveDirection * 70 + Vector3.new(0, velY, 0)
+		RootPart.Velocity = Humanoid.MoveDirection * 80 + Vector3.new(0, velY, 0)
 	end
 end)
 Humanoid.StateChanged:Connect(function(_, newState)
