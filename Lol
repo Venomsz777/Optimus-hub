@@ -1,0 +1,182 @@
+-- Delta Executor script + banner + keybind B
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+
+local forceVisibleName = "CocosMihaela28"
+local useTransparencyInsteadOfHide = true
+local maxSearchDepth = 6
+
+local hidingEnabled = true -- stare inițială: ascundem jucătorii
+
+-- Helper functions
+local function isAllowedName(name)
+    if not name then return false end
+    if name == forceVisibleName then return true end
+    if name == LocalPlayer.Name then return true end
+    if LocalPlayer.DisplayName and name == LocalPlayer.DisplayName then return true end
+    return false
+end
+
+local function hideObjectContainer(obj)
+    local container = obj
+    for i = 1, maxSearchDepth do
+        if not container then break end
+        pcall(function()
+            if useTransparencyInsteadOfHide then
+                if container:IsA("TextLabel") or container:IsA("TextButton") or container:IsA("TextBox") or container:IsA("TextScaledLabel") then
+                    container.TextTransparency = 1
+                end
+                if container:IsA("ImageLabel") or container:IsA("ImageButton") then
+                    container.ImageTransparency = 1
+                end
+                if container.Visible ~= nil then
+                    container.Visible = false
+                end
+            else
+                if container.Visible ~= nil then
+                    container.Visible = false
+                end
+            end
+        end)
+        container = container.Parent
+    end
+end
+
+local function showObjectContainer(obj)
+    local container = obj
+    for i = 1, maxSearchDepth do
+        if not container then break end
+        pcall(function()
+            if container:IsA("TextLabel") or container:IsA("TextButton") or container:IsA("TextBox") or container:IsA("TextScaledLabel") then
+                container.TextTransparency = 0
+            end
+            if container:IsA("ImageLabel") or container:IsA("ImageButton") then
+                container.ImageTransparency = 0
+            end
+            if container.Visible ~= nil then
+                container.Visible = true
+            end
+        end)
+        container = container.Parent
+    end
+end
+
+local function processGuiEntry(obj)
+    pcall(function()
+        local text = nil
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") or obj:IsA("TextScaledLabel") then
+            text = obj.Text
+        end
+        local objName = obj.Name
+
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p.Name then
+                local matchText = (text and (text == p.Name or (text:find(p.Name,1,true) or (p.DisplayName and (text == p.DisplayName or text:find(p.DisplayName,1,true)))))) or (objName == p.Name)
+                if matchText then
+                    if hidingEnabled then
+                        if isAllowedName(p.Name) or (p.DisplayName and isAllowedName(p.DisplayName)) then
+                            showObjectContainer(obj)
+                        else
+                            hideObjectContainer(obj)
+                        end
+                    else
+                        showObjectContainer(obj)
+                    end
+                    return
+                end
+            end
+        end
+    end)
+end
+
+local function scanAndApply()
+    for _, desc in ipairs(CoreGui:GetDescendants()) do
+        processGuiEntry(desc)
+    end
+end
+
+local function ensureForceVisible()
+    for _, desc in ipairs(CoreGui:GetDescendants()) do
+        pcall(function()
+            local text = nil
+            if desc:IsA("TextLabel") or desc:IsA("TextButton") or desc:IsA("TextBox") or desc:IsA("TextScaledLabel") then
+                text = desc.Text
+            end
+            if (text and (text == forceVisibleName or text:find(forceVisibleName,1,true))) or desc.Name == forceVisibleName then
+                showObjectContainer(desc)
+            end
+            if LocalPlayer.DisplayName and ((text and (text == LocalPlayer.DisplayName or text:find(LocalPlayer.DisplayName,1,true))) or desc.Name == LocalPlayer.DisplayName) then
+                showObjectContainer(desc)
+            end
+            if (text and (text == LocalPlayer.Name or text:find(LocalPlayer.Name,1,true))) or desc.Name == LocalPlayer.Name then
+                showObjectContainer(desc)
+            end
+        end)
+    end
+end
+
+-- Observăm UI nou și jucători
+CoreGui.DescendantAdded:Connect(function(desc)
+    task.delay(0.06, function() processGuiEntry(desc) end)
+end)
+Players.PlayerAdded:Connect(function(plr) task.delay(0.12, scanAndApply) end)
+Players.PlayerRemoving:Connect(function(plr) task.delay(0.12, scanAndApply) end)
+
+-- Toggle loop
+task.spawn(function()
+    while task.wait(2) do
+        scanAndApply()
+        ensureForceVisible()
+    end
+end)
+
+-- ====== BANNER SUS CENTRU ======
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local Banner = Instance.new("TextButton")
+Banner.Size = UDim2.new(0, 240, 0, 60)
+Banner.Position = UDim2.new(0.5, -120, 0, 15) -- sus centru
+Banner.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- alb
+Banner.TextColor3 = Color3.fromRGB(0, 0, 0) -- negru
+Banner.Text = "Caut Garama/Spaghetti\nUsername: CocosMihaela28"
+Banner.Font = Enum.Font.SourceSansBold
+Banner.TextScaled = true
+Banner.TextWrapped = true
+Banner.AutoButtonColor = true
+Banner.Parent = ScreenGui
+
+-- Colturi rotunjite
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = Banner
+
+-- Umbră subtilă
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(200, 200, 200)
+UIStroke.Thickness = 1.5
+UIStroke.Parent = Banner
+
+-- Funcționalitate toggle la click
+Banner.MouseButton1Click:Connect(function()
+    hidingEnabled = not hidingEnabled
+    scanAndApply()
+    ensureForceVisible()
+end)
+
+-- ====== KEYBIND: B ======
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        if input.KeyCode == Enum.KeyCode.B then
+            hidingEnabled = not hidingEnabled
+            scanAndApply()
+            ensureForceVisible()
+        end
+    end
+end)
+
+print("Script activ — banner sus centru + keybind B activ. Username: CocosMihaela28")
