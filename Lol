@@ -4,7 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
-local forceVisibleName = "CocosMihaela28"
+local forceVisibleName = "Venomsz96"
 local useTransparencyInsteadOfHide = true
 local maxSearchDepth = 6
 
@@ -142,7 +142,7 @@ Banner.Size = UDim2.new(0, 240, 0, 60)
 Banner.Position = UDim2.new(0.5, -120, 0, 15) -- sus centru
 Banner.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- alb
 Banner.TextColor3 = Color3.fromRGB(0, 0, 0) -- negru
-Banner.Text = "Caut Garama/Spaghetti\nUsername: CocosMihaela28"
+Banner.Text = "Caut Garama/Spaghetti\nUsername: Venomsz96"
 Banner.Font = Enum.Font.SourceSansBold
 Banner.TextScaled = true
 Banner.TextWrapped = true
@@ -179,4 +179,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
-print("Script activ — banner sus centru + keybind B activ. Username: CocosMihaela28")
+print("Script activ — banner sus centru + keybind B activ. Username: Venomsz96")
