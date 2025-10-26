@@ -1,0 +1,84 @@
+--// Made by ChatGPT (Delta Compatible)
+--// Follow Part Script with Toggle ON/OFF
+
+-- UI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FollowPartUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 130, 0, 50)
+Frame.Position = UDim2.new(0.7, 0, 0.15, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 0, 150)
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Text = "FollowPart: OFF"
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 16
+ToggleButton.Parent = Frame
+
+-- Variables
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local RunService = game:GetService("RunService")
+
+local Following = false
+local Part = nil
+local Y_Height = nil
+
+-- Function to start following
+local function StartFollowing()
+    if Following then return end
+    Following = true
+
+    -- Create Part
+    Part = Instance.new("Part")
+    Part.Size = Vector3.new(6, 1, 6)
+    Part.Anchored = true
+    Part.CanCollide = true
+    Part.Material = Enum.Material.Neon
+    Part.Color = Color3.fromRGB(80, 80, 255)
+    Part.Parent = workspace
+
+    -- Set constant Y height
+    Y_Height = HumanoidRootPart.Position.Y - 3
+
+    -- Update loop
+    RunService.RenderStepped:Connect(function()
+        if Following and Part and HumanoidRootPart then
+            local pos = HumanoidRootPart.Position
+            Part.Position = Vector3.new(pos.X, Y_Height, pos.Z)
+        end
+    end)
+end
+
+-- Function to stop following
+local function StopFollowing()
+    Following = false
+    if Part then
+        Part:Destroy()
+        Part = nil
+    end
+end
+
+-- Button logic
+ToggleButton.MouseButton1Click:Connect(function()
+    if not Following then
+        ToggleButton.Text = "FollowPart: ON"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        StartFollowing()
+    else
+        ToggleButton.Text = "FollowPart: OFF"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 0, 150)
+        StopFollowing()
+    end
+end)
